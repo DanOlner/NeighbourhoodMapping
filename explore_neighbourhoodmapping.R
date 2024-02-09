@@ -165,4 +165,45 @@ st_write(well_formed_polygons,'data/qgis/wellformedpolygons.shp')
 
 
 
+#Or: Another possible approach - if the polygon is well formed, consecutive points in each line segment will be relatively close together. For scribbles, the average distance between consecutive points will be higher. Is there a way to convert a simple features polygon to its component lines and then find their lengths, to test this?
+
+#Convert polygons to linestrings (boundaries)
+lines <- st_boundary(polygons)
+
+#Extract segments and calculate their lengths
+extract_segment_lengths <- function(linestring) {
+  # Extract coordinates from the linestring
+  coords <- st_coordinates(linestring)
+  # Calculate lengths of segments
+  segment_lengths <- sqrt(diff(coords[,1])^2 + diff(coords[,2])^2)
+  return(segment_lengths)
+}
+
+#Get average segment length
+polygons$avg_segment_length <- sapply(lines$`WKT Click the button below to start drawing on the map`, function(lines){
+  
+  segment_lengths <- extract_segment_lengths(lines)
+  avsegmentlength = mean(segment_lengths)
+  
+})
+
+
+#Filter based on those...
+# threshold_segments <- quantile(polygons$avg_segment_length, probs = 0.05) # Example threshold, quantile
+
+#Eyeballing, there's a big break here...
+well_formed_polygons_from_segments <- polygons[polygons$avg_segment_length < 0.01, ]
+
+tm_shape(well_formed_polygons_from_segments) +
+  tm_borders()
+
+badly_formed_polygons_from_segments <- polygons[polygons$avg_segment_length > 0.01, ]
+
+#Ah yes, think this is nailing it
+tm_shape(badly_formed_polygons_from_segments) +
+  tm_borders()
+
+
+
+
 
