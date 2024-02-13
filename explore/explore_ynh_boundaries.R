@@ -53,11 +53,53 @@ write_csv(la.itl1lookup,'data/localauthority_itl1lookup.csv')
 
 
 #Y&H local authorities
-ynh.la <- la %>% filter(LAD23NM %in% la.itl1lookup$LAD23NM[la.itl1lookup$ITL121NM=='Yorkshire and The Humber'])
+ynh.la <- la %>% filter(
+  LAD23NM %in% la.itl1lookup$LAD23NM[la.itl1lookup$ITL121NM=='Yorkshire and The Humber']
+  )
+
+#Overlapping Y&H, proposed Greater Lincolnshire Combined Authority
+#(Which would mean every Y&H LA was in a CA)
+#https://www.northlincs.gov.uk/site/documents/your-council/greater-lincolnshire-devolution-combined-county-authority-proposal
+#So let's add that one in to the Y&H+ list of LAs
+
+#List of district councils that make up Lincolnshire County Council
+#https://en.wikipedia.org/wiki/Lincolnshire_County_Council#Governance
+ynh.la <- ynh.la %>% 
+  bind_rows(la %>% filter(LAD23NM %in% c('Boston','Lincoln','East Lindsey','North Kesteven','South Holland','South Kesteven','West Lindsey')))
+
+
+
+
+#Combined authorities just for Y&H, manually combining
+#Gets North Yorkshire too, but going to label as 'open consultation'
+# ynh.ca <- la %>% filter(grepl('Sheff|Rotherham|Doncast|Barns|Bradford|Calderdale|Kirklees|Leeds|Wakefield|York|North York|Hull',LAD23NM, ignore.case = T)) 
+ynh.la <- ynh.la %>% 
+  mutate(
+    combinedauthorityname = case_when(
+      grepl('Sheff|Rotherham|Doncast|Barns',LAD23NM, ignore.case = T) ~ 'South Yorkshire Combined Mayoral Authority',
+      grepl('Bradford|Calderdale|Kirklees|Leeds|Wakefield',LAD23NM, ignore.case = T) ~ 'West Yorkshire Combined Authority',
+      LAD23NM %in% c('York','North Yorkshire') ~ 'York and North Yorkshire Combined Authority',
+      grepl('Hull|riding',LAD23NM, ignore.case = T) ~ 'Hull and East Yorkshire Mayoral Combined Authority',
+      LAD23NM %in% c('Boston','Lincoln','East Lindsey','North Kesteven','South Holland','South Kesteven','West Lindsey','North Lincolnshire','North East Lincolnshire') ~ 'Greater Lincolnshire Combined Authority'
+    )
+  )
+
+
+
 
 #Check
 plot(st_geometry(ynh.la), border = 'blue')
 plot(st_geometry(regions %>% filter(ITL121NM == 'Yorkshire and The Humber')), lwd = 3, add = T)
+
+tmap_mode('view')
+
+tm_shape(ynh.la) +
+  tm_polygons(col = 'combinedauthorityname', id = 'LAD23NM', alpha = 0.3) +
+  tm_shape(regions %>% filter(ITL121NM == 'Yorkshire and The Humber')) +
+  tm_borders(lwd = 4)
+
+
+
 
 
 
