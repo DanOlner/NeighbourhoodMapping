@@ -5,6 +5,9 @@ library(tmap)
 sf::sf_use_s2(FALSE)
 options(scipen = 99)
 
+
+#LOAD AND FILTER----
+
 #Some manual deletes of corrupted columns in the exported CSV to get sf to be able to parse WKT
 df <- read_csv('data/Sheffield Neighbourhood Mapping - anonymised responses to 09.02.24doedit.csv')
 df <- st_as_sf(x = df, wkt = "WKT Click the button below to start drawing on the map", crs = 4326)
@@ -101,7 +104,9 @@ table(table(df$`Respondent ID`))
 #   
 # }
 
-#Test methods for deducing which are not full polygons
+
+
+#TEST METHODS FOR DEDUCING WHICH ARE NOT FULL POLYGONS / WHICH ARE SCRIBBLES
 polygons <- df
 
 # Calculate the convex hull for each polygon and its area
@@ -164,8 +169,9 @@ tm_shape(well_formed_polygons) +
 st_write(well_formed_polygons,'data/qgis/wellformedpolygons.shp')
 
 
-
-#Or: Another possible approach - if the polygon is well formed, consecutive points in each line segment will be relatively close together. For scribbles, the average distance between consecutive points will be higher. Is there a way to convert a simple features polygon to its component lines and then find their lengths, to test this?
+#THIS IS WINNING I THINK
+#Or: Another possible approach - if the polygon is well formed, consecutive points in each line segment will be relatively close together. For scribbles, the average distance between consecutive points will be higher. 
+#So, convert a simple features polygon to its component lines and then find their lengths, to test this
 
 #Convert polygons to linestrings (boundaries)
 lines <- st_boundary(polygons)
@@ -187,7 +193,6 @@ polygons$avg_segment_length <- sapply(lines$`WKT Click the button below to start
   
 })
 
-
 #Filter based on those...
 # threshold_segments <- quantile(polygons$avg_segment_length, probs = 0.05) # Example threshold, quantile
 
@@ -195,12 +200,20 @@ polygons$avg_segment_length <- sapply(lines$`WKT Click the button below to start
 well_formed_polygons_from_segments <- polygons[polygons$avg_segment_length < 0.01, ]
 
 tm_shape(well_formed_polygons_from_segments) +
-  tm_borders()
+  tm_borders(lwd = 2)
 
 badly_formed_polygons_from_segments <- polygons[polygons$avg_segment_length > 0.01, ]
 
 #Ah yes, think this is nailing it
 tm_shape(badly_formed_polygons_from_segments) +
+  tm_borders()
+
+
+#Let's try this
+polygons$avg_segment_length_kmeansclusters <- kmeans(polygons$avg_segment_length, centers = 2)$cluster
+
+#Not quite as good as just eyeballing the break, actually
+tm_shape(polygons %>% filter(avg_segment_length_kmeansclusters == 1)) +
   tm_borders()
 
 
