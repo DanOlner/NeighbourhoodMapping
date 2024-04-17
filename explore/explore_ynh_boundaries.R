@@ -125,11 +125,11 @@ police.w.GOR <- getoverlaps(regions, st_read('D:/Dropbox/MapPolygons/EnglandWale
 #NHS regions
 NHSregion.w.GOR <- getoverlaps(regions, st_read('D:/Dropbox/MapPolygons/England/2019/NHS_Region_Local_Offices_April_2019_GCB_EN_2022_7882941909319148229/NHS_Region_Local_Offices_April_2019_GCB_EN.shp'), targetID = ITL121NM, inputID = nhsrlo19nm, returntype = 'sf')
 
-
-
+wards2023.w.GOR <- getoverlaps(regions, st_read('D:/Dropbox/MapPolygons/UK/2023/Wards_December_2023_Boundaries_UK_BGC_7492499881508450173/WD_DEC_2023_UK_BGC.shp'), targetID = ITL121NM, inputID = WD23CD, returntype = 'sf')
 
 #Add a bunch to the same map as selectable layers
 ynh.icb <- icb.w.GOR %>% filter(ITL121NM == 'Yorkshire and The Humber')
+
 
 #https://stackoverflow.com/questions/53094379/in-r-tmap-how-do-i-control-layer-visibility-in-interactive-mode
 tm <- tm_shape(ynh.la %>% rename(`Combined Authority` = combinedauthorityname), name = 'Local authorities') +
@@ -145,13 +145,16 @@ tm <- tm_shape(ynh.la %>% rename(`Combined Authority` = combinedauthorityname), 
   tm_shape(fire.w.GOR %>% filter(ITL121NM == 'Yorkshire and The Humber'), name = 'Fire & rescue authorities') +
   tm_polygons(lwd = 4, col = 'red', border.col = 'darkred', alpha = 0.3, id = 'FRA22NM') + 
   tm_shape(police.w.GOR %>% filter(ITL121NM == 'Yorkshire and The Humber'), name = 'Police force areas') +
-  tm_polygons(lwd = 4, col = 'blue', border.col = 'darkblue', alpha = 0.3, id = 'PFA22NM')  
+  tm_polygons(lwd = 4, col = 'blue', border.col = 'darkblue', alpha = 0.3, id = 'PFA22NM')  +
+  tm_shape(wards2023.w.GOR %>% filter(ITL121NM == 'Yorkshire and The Humber'), name = 'Wards') +
+  tm_polygons(lwd = 2, col = 'darkseagreen1', border.col = 'darkseagreen4', alpha = 0.3, id = 'WD23NM')  
   
 tm %>% 
   tmap_leaflet() %>%
   leaflet::hideGroup("Integrated Care Boards") %>% 
   leaflet::hideGroup("NHS region") %>% 
   leaflet::hideGroup("Fire & rescue authorities") %>% 
+  leaflet::hideGroup("Wards") %>% 
   leaflet::hideGroup("Police force areas") 
 
 
